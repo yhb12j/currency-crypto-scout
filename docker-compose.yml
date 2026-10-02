@@ -1,0 +1,19 @@
+name: currency-crypto-scout
+
+services:
+  api:
+    build: .
+    image: currency-crypto-scout:1.0.0
+    container_name: currency-crypto-scout
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /app/data/market.db
+    volumes:
+      - market-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  market-data:

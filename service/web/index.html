@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Разведчик валют и криптоактивов</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">₽$</div>
+      <div class="brand-name">Разведчик валют<br>и криптоактивов</div>
+    </div>
+    <nav class="nav">
+      <a href="#datasets" data-view="datasets">Наборы данных</a>
+      <a href="#collect" data-view="collect">Сбор</a>
+      <a href="#showcase" data-view="showcase">Витрина</a>
+      <a href="#audit" data-view="audit">Аудит <span id="nav-review" class="nav-badge" hidden></span></a>
+    </nav>
+    <div class="active-set">
+      <div class="label">Активный набор</div>
+      <div id="active-name" class="value">—</div>
+      <div id="active-source" class="muted"></div>
+    </div>
+    <div id="service-status" class="service-status"></div>
+  </aside>
+
+  <main class="content">
+    <div id="alert" class="alert" hidden></div>
+
+    <!-- Наборы данных -->
+    <section data-section="datasets">
+      <header class="section-head"><h1>Наборы данных</h1></header>
+      <form id="dataset-form" class="toolbar">
+        <input name="name" maxlength="200" placeholder="Название" required>
+        <select name="source">
+          <option value="CoinGecko">CoinGecko</option>
+          <option value="exchangerate.host">exchangerate.host</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Создать</button>
+      </form>
+      <div id="dataset-msg" class="msg" hidden></div>
+      <div class="panel">
+        <table class="grid">
+          <thead><tr><th>Название</th><th>Источник</th><th>ID набора</th><th>Создан</th><th class="num">Записей</th><th>Последний сбор</th><th></th></tr></thead>
+          <tbody id="dataset-rows"></tbody>
+        </table>
+        <div id="dataset-empty" class="empty" hidden>Нет наборов данных</div>
+      </div>
+    </section>
+
+    <!-- Сбор -->
+    <section data-section="collect" hidden>
+      <header class="section-head"><h1>Сбор</h1><span id="collect-target" class="tag"></span></header>
+      <div class="panel pad">
+        <label class="field">Запрос
+          <textarea id="query" rows="3" maxlength="1000"></textarea>
+        </label>
+        <div class="actions">
+          <button id="btn-plan" type="button" class="btn">Спланировать</button>
+          <button id="btn-collect" type="button" class="btn btn-primary" disabled>Собрать</button>
+          <span id="collect-state" class="muted"></span>
+        </div>
+      </div>
+      <div id="collect-msg" class="msg" hidden></div>
+
+      <div id="review" class="panel pad review" hidden>
+        <h2>Нужна ручная проверка запроса</h2>
+        <dl class="kv">
+          <dt>Почему</dt><dd id="review-reason"></dd>
+          <dt>Что сделать</dt><dd><ul id="review-hints"></ul></dd>
+        </dl>
+      </div>
+
+      <div id="plan" class="panel pad" hidden>
+        <h2>План</h2>
+        <div class="kpis">
+          <div><span>Уверенность</span><b id="p-confidence"></b></div>
+          <div><span>Ручная проверка</span><b id="p-review"></b></div>
+          <div><span>Источник</span><b id="p-source"></b></div>
+          <div><span>Решение</span><b id="p-decided"></b></div>
+        </div>
+        <dl class="kv">
+          <dt>Поля</dt><dd id="p-fields"></dd>
+          <dt>Адрес запроса</dt><dd><code id="p-url"></code></dd>
+          <dt>Шаги</dt><dd><ol id="p-steps"></ol></dd>
+          <dt id="p-notes-label">Параметры по умолчанию</dt><dd><ul id="p-notes"></ul></dd>
+        </dl>
+        <details><summary>JSON</summary><pre id="p-json"></pre></details>
+      </div>
+
+      <div id="result" class="panel pad result" hidden>
+        <span id="result-text"></span>
+        <a href="#showcase" class="btn btn-primary">Открыть витрину</a>
+      </div>
+    </section>
+
+    <!-- Витрина -->
+    <section data-section="showcase" hidden>
+      <header class="section-head"><h1>Витрина</h1><span id="showcase-target" class="tag"></span></header>
+      <div class="toolbar">
+        <label class="inline">Лимит
+          <select id="limit"><option>50</option><option>100</option><option>500</option></select>
+        </label>
+        <button id="btn-reload" type="button" class="btn">Обновить</button>
+        <span class="spacer"></span>
+        <button id="btn-json" type="button" class="btn btn-primary">Скачать JSON</button>
+        <button id="btn-csv" type="button" class="btn">Скачать CSV</button>
+      </div>
+      <div id="showcase-msg" class="msg" hidden></div>
+      <div class="panel scroll">
+        <table class="grid">
+          <thead id="record-head"></thead>
+          <tbody id="record-rows"></tbody>
+        </table>
+        <div id="record-empty" class="empty" hidden>Нет записей</div>
+      </div>
+
+      <form id="ask-form" class="panel pad">
+        <h2>Вопрос по данным набора</h2>
+        <div class="ask-row">
+          <input id="question" maxlength="1000" placeholder="Вопрос">
+          <button id="btn-ask" type="submit" class="btn">Спросить</button>
+        </div>
+        <div id="answer" class="answer" hidden>
+          <div id="answer-text"></div>
+          <div id="answer-meta" class="muted"></div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Аудит -->
+    <section data-section="audit" hidden>
+      <header class="section-head"><h1>Аудит</h1></header>
+      <div class="kpis big">
+        <div><span>Всего запусков</span><b id="k-total">0</b></div>
+        <div><span>Успешно</span><b id="k-ok" class="c-ok">0</b></div>
+        <div><span>Ручная проверка</span><b id="k-review" class="c-warn">0</b></div>
+        <div><span>Ошибки</span><b id="k-error" class="c-bad">0</b></div>
+      </div>
+
+      <h2 class="sub">Требует проверки</h2>
+      <div class="panel">
+        <table class="grid">
+          <thead><tr><th>Время</th><th>Запрос</th><th>Причина</th><th></th></tr></thead>
+          <tbody id="review-rows"></tbody>
+        </table>
+        <div id="review-empty" class="empty" hidden>Нет записей</div>
+      </div>
+
+      <h2 class="sub">Журнал запусков</h2>
+      <div class="toolbar">
+        <select id="f-status">
+          <option value="">Все статусы</option>
+          <option value="ok">Успешно</option>
+          <option value="needs_review">Ручная проверка</option>
+          <option value="error">Ошибка</option>
+        </select>
+        <select id="f-action">
+          <option value="">Все действия</option>
+          <option value="create_dataset">Создание набора</option>
+          <option value="plan_and_collect">Планирование</option>
+          <option value="collect">Сбор</option>
+          <option value="list_records">Витрина</option>
+          <option value="export">Экспорт</option>
+          <option value="ask">Вопрос по данным</option>
+        </select>
+        <button id="btn-audit" type="button" class="btn">Обновить</button>
+      </div>
+      <div class="panel scroll">
+        <table class="grid">
+          <thead><tr><th>№</th><th>Время</th><th>Действие</th><th>Статус</th><th class="num">Длительность, мс</th><th>Ошибка / причина</th><th></th></tr></thead>
+          <tbody id="audit-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="card">
+  <header class="card-head">
+    <h2 id="card-title"></h2>
+    <button type="button" class="btn" id="card-close">Закрыть</button>
+  </header>
+  <table class="grid kv-table" id="card-fields"></table>
+  <h3>Исходные данные</h3>
+  <pre id="card-raw"></pre>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
