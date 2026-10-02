@@ -3,7 +3,7 @@ import json
 from tests.conftest import load_queries
 
 CRYPTO = "Собери топ-10 криптовалют по капитализации в долларах и сохрани поля: rank, name, symbol, price, change_24h"
-FX = "Собери текущие курсы доллара, евро и юаня к рублю"
+FX = "Собери текущие котировки доллара, евро и юаня к рублю"
 MARKET_ROW = {
     "id": "bitcoin", "symbol": "btc", "name": "Bitcoin", "current_price": 84727, "market_cap": 1702316865338,
     "market_cap_rank": 1, "total_volume": 33472815109, "price_change_percentage_24h_in_currency": 1.19503,

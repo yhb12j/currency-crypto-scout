@@ -25,7 +25,7 @@ def test_reference_set_composition():
 
 @pytest.mark.parametrize("query, source, fragment", [
     ("Собери курс биткоина в рублях", EXCHANGERATE, "exchangerate.host не содержит криптовалют"),
-    ("Собери курсы доллара к рублю", COINGECKO, "CoinGecko не содержит курсов"),
+    ("Собери курсы доллара к рублю", COINGECKO, "CoinGecko не содержит котировок"),
     ("Собери биткоин", COINGECKO, "нет ограничений"),
     ("Собери историю bitcoin за 2 года", COINGECKO, "не более чем за 365"),
     ("Собери курс доллара к рублю за 7 дней", EXCHANGERATE, "за период недоступны"),

@@ -19,11 +19,6 @@
       <a href="#showcase" data-view="showcase">Витрина</a>
       <a href="#audit" data-view="audit">Аудит <span id="nav-review" class="nav-badge" hidden></span></a>
     </nav>
-    <div class="active-set">
-      <div class="label">Активный набор</div>
-      <div id="active-name" class="value">—</div>
-      <div id="active-source" class="muted"></div>
-    </div>
     <div id="service-status" class="service-status"></div>
   </aside>
 
@@ -44,7 +39,7 @@
       <div id="dataset-msg" class="msg" hidden></div>
       <div class="panel">
         <table class="grid">
-          <thead><tr><th>Название</th><th>Источник</th><th>ID набора</th><th>Создан</th><th class="num">Записей</th><th>Последний сбор</th><th></th></tr></thead>
+          <thead><tr><th>Название</th><th>Источник</th><th>Создан</th><th>ID</th><th class="num">Записей</th><th>Последний сбор</th><th></th></tr></thead>
           <tbody id="dataset-rows"></tbody>
         </table>
         <div id="dataset-empty" class="empty" hidden>Нет наборов данных</div>
@@ -76,19 +71,13 @@
 
       <div id="plan" class="panel pad" hidden>
         <h2>План</h2>
-        <div class="kpis">
+        <div class="kpis kpis-2">
           <div><span>Уверенность</span><b id="p-confidence"></b></div>
-          <div><span>Ручная проверка</span><b id="p-review"></b></div>
-          <div><span>Источник</span><b id="p-source"></b></div>
-          <div><span>Решение</span><b id="p-decided"></b></div>
+          <div><span>Статус модерации</span><b id="p-review"></b></div>
         </div>
         <dl class="kv">
-          <dt>Поля</dt><dd id="p-fields"></dd>
-          <dt>Адрес запроса</dt><dd><code id="p-url"></code></dd>
           <dt>Шаги</dt><dd><ol id="p-steps"></ol></dd>
-          <dt id="p-notes-label">Параметры по умолчанию</dt><dd><ul id="p-notes"></ul></dd>
         </dl>
-        <details><summary>JSON</summary><pre id="p-json"></pre></details>
       </div>
 
       <div id="result" class="panel pad result" hidden>
@@ -137,7 +126,7 @@
       <div class="kpis big">
         <div><span>Всего запусков</span><b id="k-total">0</b></div>
         <div><span>Успешно</span><b id="k-ok" class="c-ok">0</b></div>
-        <div><span>Ручная проверка</span><b id="k-review" class="c-warn">0</b></div>
+        <div><span>На модерации</span><b id="k-review" class="c-warn">0</b></div>
         <div><span>Ошибки</span><b id="k-error" class="c-bad">0</b></div>
       </div>
 
@@ -155,7 +144,7 @@
         <select id="f-status">
           <option value="">Все статусы</option>
           <option value="ok">Успешно</option>
-          <option value="needs_review">Ручная проверка</option>
+          <option value="needs_review">На модерации</option>
           <option value="error">Ошибка</option>
         </select>
         <select id="f-action">
@@ -182,11 +171,15 @@
 <dialog id="card">
   <header class="card-head">
     <h2 id="card-title"></h2>
-    <button type="button" class="btn" id="card-close">Закрыть</button>
   </header>
-  <table class="grid kv-table" id="card-fields"></table>
-  <h3>Исходные данные</h3>
-  <pre id="card-raw"></pre>
+  <dl class="card-list" id="card-fields"></dl>
+  <details id="card-raw-box" class="card-raw">
+    <summary id="card-raw-title">record_json</summary>
+    <pre id="card-raw"></pre>
+  </details>
+  <footer class="card-foot">
+    <button type="button" class="btn btn-primary" id="card-done">Закрыть</button>
+  </footer>
 </dialog>
 
 <script src="/static/app.js"></script>

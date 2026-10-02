@@ -10,9 +10,25 @@ const LABELS = {
     export: "Экспорт",
     ask: "Вопрос по данным",
   },
-  status: { ok: "Успешно", needs_review: "Ручная проверка", error: "Ошибка" },
+  status: { ok: "Успешно", needs_review: "На модерации", error: "Ошибка" },
   confidence: { high: "Высокая", medium: "Средняя", low: "Низкая" },
-  decided: { policy: "Правила", model: "Модель", "policy+model": "Правила и модель", contract: "Контроль контракта" },
+  field: {
+    rank: "Ранг",
+    name: "Название",
+    symbol: "Тикер",
+    coin: "Монета",
+    date: "Дата",
+    base: "Базовая валюта",
+    currency: "Валюта",
+    price: "Цена",
+    rate: "Котировка",
+    market_cap: "Капитализация",
+    volume_24h: "Объём за 24 ч",
+    volume: "Объём",
+    change_24h: "Изменение за 24 ч, %",
+    change_7d: "Изменение за 7 д, %",
+    updated_at: "Обновлено источником",
+  },
 };
 
 const el = (id) => document.getElementById(id);
@@ -112,8 +128,6 @@ function setActive(dataset) {
 
 function renderActive() {
   const d = state.dataset;
-  el("active-name").textContent = d ? d.name : "—";
-  el("active-source").textContent = d ? d.source : "";
   const tag = d ? `${d.name} · ${d.source}` : "Набор не выбран";
   el("collect-target").textContent = tag;
   el("showcase-target").textContent = tag;
@@ -162,8 +176,8 @@ async function loadDatasets() {
     return h("tr", { class: active ? "selected" : "" },
       h("td", { class: "strong" }, r.name),
       h("td", {}, r.source),
-      h("td", { class: "mono" }, r.dataset_id),
-      h("td", {}, fmtTime(r.created_at)),
+      h("td", { class: "nowrap" }, fmtTime(r.created_at)),
+      h("td", { class: "mono dim", title: r.dataset_id }, r.dataset_id.slice(0, 8)),
       h("td", { class: "num" }, r.records_count),
       h("td", {}, fmtTime(r.last_collected_at)),
       h("td", { class: "right" }, h("button", {
@@ -183,7 +197,7 @@ el("dataset-form").addEventListener("submit", async (event) => {
   if (!res.ok) return message("dataset-msg", problem(res), "bad");
   form.name.value = "";
   setActive({ ...body, dataset_id: res.data.dataset_id });
-  message("dataset-msg", `Создан набор «${body.name}», dataset_id ${res.data.dataset_id}`);
+  message("dataset-msg", `Создан набор «${body.name}»`);
   loadDatasets();
 });
 
@@ -202,7 +216,7 @@ function syncCollect() {
   if (!state.dataset) text = "Набор не выбран";
   else if (!state.plan) text = "План не построен";
   else if (!sameQuery) text = "Запрос изменён после планирования";
-  else if (state.plan.needs_review) text = "Сбор заблокирован: требуется ручная проверка";
+  else if (state.plan.needs_review) text = "Сбор заблокирован до уточнения запроса";
   btn.disabled = Boolean(text);
   status.textContent = text;
   status.className = state.plan && state.plan.needs_review && sameQuery ? "c-warn" : "muted";
@@ -232,23 +246,9 @@ function renderPlan(p) {
   el("plan").hidden = false;
   el("p-confidence").textContent = LABELS.confidence[p.confidence] || p.confidence;
   el("p-confidence").className = "conf-" + p.confidence;
-  el("p-review").textContent = p.needs_review ? "Да" : "Нет";
+  el("p-review").textContent = p.needs_review ? "Заблокирован" : "Допущен";
   el("p-review").className = p.needs_review ? "c-warn" : "c-ok";
-  el("p-source").textContent = p.source || "—";
-  el("p-decided").textContent = LABELS.decided[p.decided_by] || p.decided_by || "—";
-  el("p-fields").textContent = (p.fields_to_keep || []).join(", ") || "—";
-  el("p-url").textContent = p.api_url || "—";
   fillList("p-steps", p.plan_steps);
-  fillList("p-notes", p.notes);
-  const hasNotes = Boolean((p.notes || []).length);
-  el("p-notes-label").hidden = el("p-notes").parentElement.hidden = !hasNotes;
-  el("p-json").textContent = JSON.stringify({
-    plan_steps: p.plan_steps,
-    api_url: p.api_url,
-    fields_to_keep: p.fields_to_keep,
-    confidence: p.confidence,
-    needs_review: p.needs_review,
-  }, null, 2);
   el("review").hidden = !p.needs_review;
   el("review-reason").textContent = p.reason || "";
   fillList("review-hints", p.hints);
@@ -293,28 +293,29 @@ async function loadRecords() {
   el("record-empty").hidden = rows.length > 0;
   const fields = [...new Set(rows.flatMap((r) => Object.keys(r.record_json)))];
   head.append(h("tr", {},
-    h("th", { class: "num" }, "№"), h("th", {}, "Время сбора"), h("th", {}, "ID набора"), h("th", {}, "Источник"),
+    h("th", { class: "num" }, "№"), h("th", {}, "Время сбора"), h("th", {}, "ID"), h("th", {}, "Источник"),
     fields.map((f) => h("th", {}, f)), h("th", {}, "record_json"), h("th", {}),
   ));
   body.append(...rows.map((r) => h("tr", {},
     h("td", { class: "num" }, r.id),
     h("td", {}, fmtTime(r.created_at)),
-    h("td", { class: "mono" }, r.dataset_id.slice(0, 8)),
+    h("td", { class: "mono dim", title: r.dataset_id }, r.dataset_id.slice(0, 8)),
     h("td", {}, r.source),
     fields.map((f) => h("td", { class: typeof r.record_json[f] === "number" ? "num" : "" }, fmtValue(r.record_json[f]))),
-    h("td", { class: "mono dim" }, short(JSON.stringify(r.record_json), 60)),
+    h("td", { class: "mono dim clip", title: JSON.stringify(r.record_json) }, short(JSON.stringify(r.record_json), 32)),
     h("td", { class: "right" }, h("button", { type: "button", class: "btn btn-sm", onclick: () => openRecord(r) }, "Открыть")),
   )));
 }
 
 function openRecord(r) {
   openCard(`Запись № ${r.id}`, [
-    ["id", r.id],
-    ["created_at", r.created_at],
-    ["dataset_id", r.dataset_id],
-    ["source", r.source],
-    ...Object.entries(r.record_json),
-  ], r.record_json);
+    ...Object.entries(r.record_json).map(([key, value]) => [
+      LABELS.field[key] || key,
+      key === "updated_at" ? fmtTime(value) : value,
+    ]),
+    ["Источник", r.source],
+    ["Дата сбора", fmtTime(r.created_at)],
+  ], r.record_json, "record_json");
 }
 
 el("limit").addEventListener("change", loadRecords);
@@ -350,7 +351,7 @@ el("ask-form").addEventListener("submit", async (event) => {
   }
   const a = res.data;
   box.className = "answer" + (a.needs_review ? " answer-review" : "");
-  el("answer-text").textContent = a.needs_review ? `Нужна ручная проверка. ${a.reason}` : a.answer;
+  el("answer-text").textContent = a.needs_review ? `Ответ не сформирован: ${a.reason}` : a.answer;
   el("answer-meta").textContent = a.needs_review
     ? `Записей в контексте: ${a.records_considered}`
     : `Уверенность: ${LABELS.confidence[a.confidence]} · Записи: ${a.used_record_ids.join(", ")} · ${a.reason}`;
@@ -378,9 +379,9 @@ async function loadAudit() {
     h("td", { class: "nowrap" }, fmtTime(r.created_at)),
     h("td", {}, short(r.query, 90)),
     h("td", { class: "c-warn" }, r.error || ""),
-    h("td", { class: "right" }, h("button", { type: "button", class: "btn btn-sm", onclick: () => openCard(`agent_runs № ${r.id}`, [
-      ["created_at", r.created_at], ["query", r.query], ["needs_review", String(r.needs_review)], ["error", r.error || "—"],
-    ], r.plan_json) }, "Открыть")),
+    h("td", { class: "right" }, h("button", { type: "button", class: "btn btn-sm", onclick: () => openCard(`Решение планировщика № ${r.id}`, [
+      ["Время", fmtTime(r.created_at)], ["Запрос", r.query], ["Статус модерации", r.needs_review ? "Заблокирован" : "Допущен"], ["Причина", r.error || "—"],
+    ], r.plan_json, "plan_json") }, "Открыть")),
   )));
   el("audit-rows").replaceChildren(...(runs.data || []).map((r) => h("tr", { class: "row-" + r.status },
     h("td", { class: "num" }, r.id),
@@ -389,9 +390,10 @@ async function loadAudit() {
     h("td", {}, h("span", { class: "badge badge-" + r.status }, LABELS.status[r.status] || r.status)),
     h("td", { class: "num" }, r.duration_ms),
     h("td", {}, r.error || ""),
-    h("td", { class: "right" }, h("button", { type: "button", class: "btn btn-sm", onclick: () => openCard(`audit_runs № ${r.id}`, [
-      ["action", r.action], ["status", r.status], ["duration_ms", r.duration_ms], ["error", r.error || "—"], ["created_at", r.created_at],
-    ], { input: r.input, output: r.output }) }, "Открыть")),
+    h("td", { class: "right" }, h("button", { type: "button", class: "btn btn-sm", onclick: () => openCard(`Запуск № ${r.id}`, [
+      ["Действие", LABELS.action[r.action] || r.action], ["Статус", LABELS.status[r.status] || r.status],
+      ["Длительность, мс", r.duration_ms], ["Ошибка / причина", r.error || "—"], ["Время", fmtTime(r.created_at)],
+    ], { input: r.input, output: r.output }, "input / output") }, "Открыть")),
   )));
   refreshBadge();
 }
@@ -402,14 +404,16 @@ el("f-action").addEventListener("change", loadAudit);
 
 // ---------------- карточка ----------------
 
-function openCard(title, pairs, raw) {
+function openCard(title, pairs, raw, rawTitle) {
   el("card-title").textContent = title;
-  el("card-fields").replaceChildren(...pairs.map(([k, v]) => h("tr", {}, h("th", {}, k), h("td", {}, fmtValue(v)))));
+  el("card-fields").replaceChildren(...pairs.flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, fmtValue(v))]));
+  el("card-raw-title").textContent = rawTitle;
   el("card-raw").textContent = JSON.stringify(raw, null, 2);
+  el("card-raw-box").open = false;
   el("card").showModal();
 }
 
-el("card-close").addEventListener("click", () => el("card").close());
+el("card-done").addEventListener("click", () => el("card").close());
 
 window.addEventListener("hashchange", route);
 renderActive();

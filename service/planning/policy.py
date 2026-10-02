@@ -36,10 +36,10 @@ def evaluate(features: QueryFeatures, source: Source | None) -> Plan:
     if source is EXCHANGERATE and features.crypto:
         return _held(code, "Запрос не соответствует источнику набора: exchangerate.host не содержит криптовалют.", (
             "Выберите набор с источником CoinGecko.",
-            "Для этого набора запросите курсы валют: «Собери курсы доллара и евро к рублю».",
+            "Для этого набора запросите котировки валют: «Собери котировки доллара и евро к рублю».",
         ))
     if source is COINGECKO and not features.crypto and features.fiats:
-        return _held(code, "Запрос не соответствует источнику набора: CoinGecko не содержит курсов фиатных валют.", (
+        return _held(code, "Запрос не соответствует источнику набора: CoinGecko не содержит котировок фиатных валют.", (
             "Выберите набор с источником exchangerate.host.",
             "Для этого набора назовите монеты: «Собери цены bitcoin и ethereum в рублях».",
         ))
@@ -148,12 +148,12 @@ def _fx(f: QueryFeatures) -> Plan:
         notes.append("Базовая валюта не указана: RUB.")
     targets = [c for c in f.fiats if c != base]
     if not targets:
-        return _held(EXCHANGERATE.code, "Не указаны валюты для получения курса.",
-                     ("Пример: «Собери курсы доллара, евро и юаня к рублю».", HINTS_VAGUE[1]))
+        return _held(EXCHANGERATE.code, "Не указаны валюты для получения котировок.",
+                     ("Пример: «Собери котировки доллара, евро и юаня к рублю».", HINTS_VAGUE[1]))
     if f.days is not None and f.on_date is None:
         return _held(EXCHANGERATE.code,
-                     "Курсы за период недоступны на тарифе exchangerate.host: допустим текущий курс или курс на дату.",
-                     ("Уберите период: «Собери курсы доллара и евро к рублю».",
+                     "Котировки за период недоступны на тарифе exchangerate.host: допустимы текущие котировки или котировки на дату.",
+                     ("Уберите период: «Собери котировки доллара и евро к рублю».",
                       "Или укажите дату: «на дату 2026-09-01»."))
     today = datetime.now(timezone.utc).date()
     if f.on_date and f.on_date > today:
@@ -168,9 +168,9 @@ def _fx(f: QueryFeatures) -> Plan:
         endpoint, params = "/historical", {"date": f.on_date.isoformat(), **params}
     calls = [Call(EXCHANGERATE.code, endpoint, params, {"base": base, "targets": targets})]
     when = f"на {f.on_date.isoformat()}" if f.on_date else "текущие"
-    steps = [f"Валюты: {', '.join(targets)}; база {base}; курсы {when}.",
+    steps = [f"Валюты: {', '.join(targets)}; база {base}; котировки {when}.",
              f"Запрос exchangerate.host {endpoint}: 1.",
-             f"Расчёт кросс-курсов через USD: {base} за 1 единицу валюты."]
+             f"Пересчёт котировок через USD: {base} за 1 единицу валюты."]
     constrained = f.base is not None or f.on_date is not None or bool(f.fields)
     return _complete(EXCHANGERATE.code, calls, catalog.FX_FIELDS, f, constrained, notes, steps)
 
