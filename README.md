@@ -2,6 +2,8 @@
 
 Сервис собирает котировки криптовалют (CoinGecko) и курсы фиатных валют (exchangerate.host) по запросу на естественном языке, сохраняет их в едином формате, показывает витрину данных с экспортом в JSON и CSV и фиксирует каждое действие в журнале аудита. Неоднозначные и невыполнимые запросы не исполняются автоматически: они получают `needs_review = true` и причину остановки.
 
+Отчёт по проекту: [docs/REPORT.md](docs/REPORT.md). Выгрузки журнала аудита и экспорта из работающего сервиса: [docs/evidence](docs/evidence).
+
 ## Возможности
 
 - Наборы данных с привязкой к источнику: CoinGecko или exchangerate.host.
@@ -212,8 +214,24 @@ curl.exe -X POST http://127.0.0.1:8000/datasets/DATASET_ID/ask -H "Content-Type:
 
 1. Веб-панель → «Сбор» → запрос `Собери самое важное` → «Спланировать». Появится блок «Нужна ручная проверка запроса» с причиной и рекомендациями, кнопка «Собрать» заблокирована.
 2. API: `curl.exe -X POST http://127.0.0.1:8000/datasets/DATASET_ID/collect -H "Content-Type: application/json" --data-binary "@docs/requests/query_ambiguous.json"` → HTTP 422, `"status": "needs_review"`.
-3. Эталонные запросы № 8, 9, 10 из `tests_data/queries.jsonl`.
-4. Раздел «Аудит» → «Требует проверки».
+3. Эталонные запросы № 8, 9, 10 из `tests_data/queries.jsonl`: `python tools/replay_queries.py`.
+4. Автотесты:
+
+   ```bash
+   python -m pytest -q -k "review or holds or held or relax or reference"
+   ```
+
+   | Тест | Проверяет |
+   | --- | --- |
+   | `test_policy.py::test_reference_queries` | `expected_needs_review` для каждой строки `tests_data/queries.jsonl` |
+   | `test_policy.py::test_review_cases` | несоответствие источнику, нет ограничений, лимиты периода и валют, неизвестные поля, дата в будущем |
+   | `test_api.py::test_reference_queries_through_api` | эталонные запросы через `POST /ai/plan_and_collect` |
+   | `test_api.py::test_model_low_confidence_holds_collection` | `confidence = low` от модели → ручная проверка |
+   | `test_api.py::test_contract_violation_holds_collection` | нарушение JSON-контракта → ручная проверка |
+   | `test_api.py::test_model_cannot_relax_policy` | модель не может отменить ручную проверку |
+   | `test_api.py::test_held_query_never_calls_provider` | при ручной проверке источник не вызывается, ответ 422, запись в аудите |
+
+5. Раздел «Аудит» → «Требует проверки».
 
 ## Эталонные запросы
 
@@ -305,4 +323,6 @@ tools/          прогон эталонных запросов, просмот
 tests/          pytest
 tests_data/     эталонные запросы
 docs/requests/  тела запросов для curl
+docs/evidence/  выгрузки аудита и экспорта
+docs/REPORT.md  отчёт по проекту
 ```
