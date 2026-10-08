@@ -156,7 +156,7 @@
 Демонстрационные материалы:
 
 - запись работы платформы: ________________________________
-- презентация архитектуры и решений: ________________________________
+- презентация архитектуры и решений: [currency-crypto-scout-presentation.zip](https://github.com/yhb12j/currency-crypto-scout/releases/download/v1.0.0/currency-crypto-scout-presentation.zip) (релиз [v1.0.0](https://github.com/yhb12j/currency-crypto-scout/releases/tag/v1.0.0))
 
 Артефакты испытаний (выгрузки из работающего экземпляра) — в [`docs/evidence`](evidence):
 
